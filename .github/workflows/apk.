@@ -1,0 +1,47 @@
+name: 🧮 HTML to APK (Zero Error)
+on: [push, workflow_dispatch]
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+    - name: 📥 Checkout
+      uses: actions/checkout@v4
+      
+    - name: 🟢 Setup Node.js (No Cache)
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'off'  # ❌ Skip cache!
+        
+    - name: 🔧 Install Cordova Global
+      run: |
+        npm config set fund false
+        npm install -g cordova@12.0.0
+        
+    - name: 📱 Build APK
+      run: |
+        cordova create temp-app com.kalkulator.app "Kalkulator"
+        cd temp-app
+        # Copy HTML & ganti default
+        cp ../index.html www/index.html
+        sed -i 's|Hello World|Kalkulator Cantik|' config.xml
+        cordova platform add android@latest
+        # Skip requirements check
+        cordova build android --debug --device 2>/dev/null || cordova build android --debug
+        
+    - name: 📤 Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: Kalkulator.apk
+        path: |
+          temp-app/platforms/android/app/build/outputs/apk/debug/app-debug.apk
+        retention-days: 90
+        retention-days: 90
+        
+    - name: 🌐 Web Demo
+      uses: peaceiris/actions-gh-pages@v3
+      if: always()
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./temp-app/www
