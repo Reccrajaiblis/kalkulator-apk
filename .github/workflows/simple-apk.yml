@@ -1,0 +1,39 @@
+name: 🧮 Build HTML to APK (Cordova)
+on: 
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: 📥 Checkout
+      uses: actions/checkout@v4
+      
+    - name: 🟢 Setup Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        
+    - name: 🔧 Install Cordova
+      run: npm install -g cordova@latest
+      
+    - name: 📱 Create & Build App
+      run: |
+        cordova create Kalkulator com.example.kalkulator "Kalkulator Cantik"
+        cd Kalkulator
+        cp ../index.html www/index.html
+        cp ../icon.png www/img/logo.png || echo "No icon"
+        cordova platform add android@latest
+        cordova requirements android
+        cordova build android
+        
+    - name: 📤 Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: Kalkulator-APK
+        path: |
+          Kalkulator/platforms/android/app/build/outputs/apk/debug/*.apk
+        retention-days: 30
